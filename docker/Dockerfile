@@ -79,7 +79,8 @@ RUN echo "Installing pytorch3d ..." && \
 # Set CUDA architectures for telling PyTorch which CUDA compute capabilities to compile for
 # Common architectures: 7.5 (Turing), 8.0 (Ampere), 8.6 (Ampere), 8.9 (Ada), 9.0 (Hopper)
 ENV CUDA_HOME="/usr/local/cuda-12.1"
-ENV TORCH_CUDA_ARCH_LIST="8.9"
+# Change this according to your GPU architecture, 3090 is 8.6
+ENV TORCH_CUDA_ARCH_LIST="8.6"
 RUN echo "Installing Curobo ..." && \
     cd /tmp/RoboTwin/envs && \
     git clone https://github.com/NVlabs/curobo.git && \

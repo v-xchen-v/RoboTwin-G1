@@ -18,6 +18,9 @@ eval_result/
 assets/*
 !assets/_download.py
 !assets/files
+!assets/embodiments/
+assets/embodiments/*
+!assets/embodiments/g1-omnipicker/
 
 policy/weights/*
 

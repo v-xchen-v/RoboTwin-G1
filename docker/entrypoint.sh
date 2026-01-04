@@ -1,4 +1,8 @@
 #!/bin/bash
-source /opt/conda/etc/profile.d/conda.sh
-conda activate RoboTwin
-exec "$@"
+
+set -e
+
+# you can add more customized cmds here
+
+# Start bash shell
+/bin/bash

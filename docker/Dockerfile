@@ -48,55 +48,50 @@ RUN apt-get update && apt-get install -y \
 # Create EGL vendor directory for NVIDIA
 RUN mkdir -p /usr/share/glvnd/egl_vendor.d
 
-# Install Miniforge (conda-forge based, no ToS required)
-RUN wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O /tmp/miniforge.sh && \
-    bash /tmp/miniforge.sh -b -p /opt/conda && \
-    rm /tmp/miniforge.sh
+# Install Miniforge
+# We download the latest script and install it to /opt/conda
+RUN wget --quiet https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh -O ~/miniforge.sh && \
+    /bin/bash ~/miniforge.sh -b -p /opt/conda && \
+    rm ~/miniforge.sh && \
+    # Initialize conda for shell interaction
+    /opt/conda/bin/conda init bash
 
-ENV PATH=/opt/conda/bin:$PATH
-
-# Initialize conda and create environment
-RUN conda init bash && \
-    conda config --set always_yes true && \
-    conda config --set changeps1 false && \
-    conda create -n RoboTwin python=3.10 -y
-
-# Activate conda environment for subsequent commands
-SHELL ["conda", "run", "-n", "RoboTwin", "/bin/bash", "-c"]
+# Install Python 3.10 via mamba
+RUN /opt/conda/bin/mamba install -n base \
+    python=3.10 \
+    -y && \
+    /opt/conda/bin/mamba clean -afy
 
 # Git clone RoboTwin repository
-WORKDIR /workspace
-RUN git clone https://github.com/RoboTwin-Platform/RoboTwin.git
-WORKDIR /workspace/RoboTwin
-
-# Activate conda environment for subsequent commands
-SHELL ["conda", "run", "-n", "RoboTwin", "/bin/bash", "-c"]
-
-# Install RoboTwin dependencies and CuRobo
-RUN bash script/_install.sh || true
-
-# Update CuRobo embodiment config path if needed
-RUN python script/update_embodiment_config_path.py || true
-
 # Note: If you are not using 3D data, a failed installation of pytorch3d 
 # will not affect the functionality of the project.
+RUN cd /tmp && \
+    git clone https://github.com/RoboTwin-Platform/RoboTwin.git
 
-# Verify ffmpeg installation
-RUN ffmpeg -version
+# Adapted from script/_install.sh to work in Docker with Miniforge
+RUN echo "Installing the necessary packages ..." && \
+    cd /tmp/RoboTwin && \
+    /opt/conda/bin/pip install -r script/requirements.txt
 
-# Clean up the copied files (will be replaced by volume mount at runtime)
-RUN rm -rf /workspace/RoboTwin/*
+RUN echo "Installing pytorch3d ..." && \
+    /opt/conda/bin/pip install --no-build-isolation "git+https://github.com/facebookresearch/pytorch3d.git@stable"
 
-# Set default conda environment
-ENV CONDA_DEFAULT_ENV=RoboTwin
+RUN echo "Installing Curobo ..." && \
+    cd /tmp/RoboTwin/envs && \
+    git clone https://github.com/NVlabs/curobo.git && \
+    cd curobo && \
+    /opt/conda/bin/pip install -e . --no-build-isolation && \
+    cd ../..
+    
+# Copy installation script and execute
+COPY docker/_install.sh /tmp/RoboTwin/docker/_install.sh
+RUN cd /tmp/RoboTwin && bash docker/_install.sh || true
+    
+# Update CuRobo embodiment config path if needed
+RUN cd /tmp/RoboTwin && /opt/conda/bin/python script/update_embodiment_config_path.py || true
 
-WORKDIR /workspace
-
-# Copy and setup entrypoint script to activate conda environment
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-ENTRYPOINT ["/entrypoint.sh"]
+# Default Command
+WORKDIR /root/workspace/main
 CMD ["/bin/bash"]
 
 # Build command:

@@ -76,6 +76,10 @@ RUN echo "Installing the necessary packages ..." && \
 RUN echo "Installing pytorch3d ..." && \
     /opt/conda/bin/pip install --no-build-isolation "git+https://github.com/facebookresearch/pytorch3d.git@stable"
 
+# Set CUDA architectures for telling PyTorch which CUDA compute capabilities to compile for
+# Common architectures: 7.5 (Turing), 8.0 (Ampere), 8.6 (Ampere), 8.9 (Ada), 9.0 (Hopper)
+ENV CUDA_HOME="/usr/local/cuda-12.1"
+ENV TORCH_CUDA_ARCH_LIST="8.9"
 RUN echo "Installing Curobo ..." && \
     cd /tmp/RoboTwin/envs && \
     git clone https://github.com/NVlabs/curobo.git && \

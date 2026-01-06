@@ -120,7 +120,7 @@ class Base_Task(gym.Env):
         self.create_table_and_wall(table_xy_bias=table_xy_bias, table_height=0.74)
         self.load_robot(**kwags)
         self.load_camera(**kwags)
-        self.robot.move_to_homestate()
+        self.robot.move_to_homestate(self.viewer if self.render_freq else None)
 
         render_freq = self.render_freq
         self.render_freq = 0
@@ -392,12 +392,12 @@ class Base_Task(gym.Env):
         else:
             self.robot.reset(self.scene, self.need_topp, **kwags)
 
-        for link in self.robot.left_entity.get_links():
-            link: sapien.physx.PhysxArticulationLinkComponent = link
-            link.set_mass(1)
-        for link in self.robot.right_entity.get_links():
-            link: sapien.physx.PhysxArticulationLinkComponent = link
-            link.set_mass(1)
+        # for link in self.robot.left_entity.get_links():
+        #     link: sapien.physx.PhysxArticulationLinkComponent = link
+        #     link.set_mass(1)
+        # for link in self.robot.right_entity.get_links():
+        #     link: sapien.physx.PhysxArticulationLinkComponent = link
+        #     link.set_mass(1)
 
     def load_camera(self, **kwags):
         """

@@ -4,10 +4,10 @@ urdf_path: "./agibot_g1_with_omnipicker.urdf"
 srdf_path: "./agibot_g1_with_omnipicker_mplib.srdf"
 
 # How to set gripper master/mimic joint with different stiffness/damping? How to configure the force limits?
-joint_stiffness: 1000
-joint_damping: 200
-gripper_stiffness: 1000
-gripper_damping: 200
+joint_stiffness: 2000
+joint_damping: 100
+gripper_stiffness: 100
+gripper_damping: 10
 
 # How to set the move group?
 move_group: ["arm_l_end_link","arm_r_end_link"]
@@ -37,7 +37,8 @@ gripper_name:
 
 # How to adjust?
 gripper_bias: 0.12
-gripper_scale: [-0.01, 0.045]
+# gripper_scale: [-0.01, 0.045]
+gripper_scale: [0.1, 0.78]
 homestate: [[0,0,0,0,0,0,0], [0,0,0,0,0,0,0]]
 
 # how to adjust delta matrix?
@@ -48,7 +49,8 @@ delta_matrix: [[1,0,0],[0,1,0],[0,0,1]]
 global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
 
 
-robot_pose: [[-1, -0.65, -1.0, 0.707, 0, 0, 0.707]]
+# Initial robot pose in the scene, [[x, y, z, qw, qx, qy, qz]]
+robot_pose: [[0, -0.75, 0.0, 0.707, 0, 0, 0.707]]
 
 
 planner: "mplib_screw"

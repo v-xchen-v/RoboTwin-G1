@@ -27,6 +27,7 @@ class Robot:
         # self.dual_arm = dual_arm_tag
         # self.plan_success = True
 
+        self.scene = scene
         self.left_js = None
         self.right_js = None
 
@@ -105,8 +106,15 @@ class Robot:
             loader: sapien.URDFLoader = scene.create_urdf_loader()
             loader.fix_root_link = True
             self._entity = loader.load(self.left_urdf_path)
+            # Disable self-collision to prevent finger collisions
+            for link in self._entity.get_links():
+                for shape in link.get_collision_shapes():
+                    # Set collision groups to avoid self-collision
+                    shape.set_collision_groups([1, 1, 2, 0])  # Only collide with group 2 (ground)
             self.left_entity = self._entity
             self.right_entity = self._entity
+            pass
+        
         else:
             arms_dis = kwargs["embodiment_dis"]
             self.left_entity_origion_pose.p += [-arms_dis / 2, 0, 0]
@@ -223,21 +231,132 @@ class Robot:
                 )
                 # Extra: set armature to improve arm stability
                 joint.set_armature([0.5])
-
+        """
+        gripper_name:
+        - base: "left_gripper_joint"
+            mimic: [
+                    ["left_narrow2_joint", 0.02, 0.],
+                    ["left_narrow3_joint", 0.4, 0.],
+                    ["left_narrow_loop_joint", 1.5, 0.],
+                    ["left_wide1_joint", 1.0, 0.],
+                    ["left_wide2_joint", 0.02, 0.],
+                    ["left_wide3_joint", 0.4, 0.],
+                    ["left_wide_loop_joint", 1.5, 0.],
+                ]
+        - base: "right_gripper_joint"
+            mimic: [
+                    ["right_narrow2_joint", 0.02, 0.],
+                    ["right_narrow3_joint", 0.4, 0.],
+                    ["right_narrow_loop_joint", 1.5, 0.],
+                    ["right_wide1_joint", 1.0, 0.],
+                    ["right_wide2_joint", 0.02, 0.],
+                    ["right_wide3_joint", 0.4, 0.],
+                    ["right_wide_loop_joint", 1.5, 0.],
+                ]
+        """
         for joint in self.left_gripper:
-            joint[0].set_drive_property(stiffness=self.left_gripper_stiffness, damping=self.left_gripper_damping)
+            # TODO: hard code now, need to be modified for different grippers
+            joint_name = joint[0].get_name()
+            if joint_name != "left_gripper_joint":
+                # If is mimic joint, set damping to 0
+                joint[0].set_drive_property(stiffness=1000, damping=0)
+            else:
+                joint[0].set_drive_property(
+                    stiffness=self.left_gripper_stiffness, 
+                    damping=self.left_gripper_damping, 
+                    force_limit=200)
+            
         for joint in self.right_gripper:
-            joint[0].set_drive_property(
-                stiffness=self.right_gripper_stiffness,
-                damping=self.right_gripper_damping,
-            )
+            joint_name = joint[0].get_name()
+            if joint_name != "right_gripper_joint":
+                # If is mimic joint, set damping to 0
+                joint[0].set_drive_property(stiffness=1000, damping=0)
+            else:
+                joint[0].set_drive_property(
+                    stiffness=self.right_gripper_stiffness,
+                    damping=self.right_gripper_damping,
+                    force_limit=200
+                )
 
-    def move_to_homestate(self):
+    def move_to_homestate(self, viewer=None):
         for i, joint in enumerate(self.left_arm_joints):
             joint.set_drive_target(self.left_homestate[i])
 
         for i, joint in enumerate(self.right_arm_joints):
             joint.set_drive_target(self.right_homestate[i])
+            
+    # def move_to_homestate(self, viewer=None):
+    #     # ----------- Set initial robot pose -----------
+    #     left_qpos = self.left_entity.get_qpos()
+    #     right_qpos = self.right_entity.get_qpos()
+    #     left_active_joints = self.left_entity.get_active_joints()
+    #     right_active_joints = self.right_entity.get_active_joints()
+        
+    #     # Set arm joint positions to homestate
+    #     for i, joint in enumerate(self.left_arm_joints):
+    #         left_qpos[left_active_joints.index(joint)] = self.left_homestate[i]
+    #     for i, joint in enumerate(self.right_arm_joints):
+    #         right_qpos[right_active_joints.index(joint)] = self.right_homestate[i]
+        
+    #     # Set gripper positions to fully open
+    #     for joint in self.left_gripper:
+    #         left_qpos[left_active_joints.index(joint[0])] = self.left_gripper_scale[1]
+    #     for joint in self.right_gripper:
+    #         right_qpos[right_active_joints.index(joint[0])] = self.right_gripper_scale[1]
+        
+    #     # Apply the qpos to entities
+    #     self.left_entity.set_qpos(left_qpos)
+    #     self.right_entity.set_qpos(right_qpos)
+    #     # ---------- Set initial robot pose end ----------
+        
+        
+    #     # Set drive targets once before simulation loop
+    #     for i, joint in enumerate(self.left_arm_joints):
+    #         joint.set_drive_target(self.left_homestate[i])
+    #     for i, joint in enumerate(self.right_arm_joints):
+    #         joint.set_drive_target(self.right_homestate[i])
+        
+    #     print(f"Left homestate targets: {self.left_homestate}")
+    #     print(f"Right homestate targets: {self.right_homestate}")
+        
+    #     for i, joint in enumerate(self.left_gripper):
+    #         joint[0].set_drive_target(self.left_gripper_scale[1]) # fully open
+    #     for i, joint in enumerate(self.right_gripper):
+    #         joint[0].set_drive_target(self.right_gripper_scale[1]) # fully open
+        
+    #     # Verify targets are set
+    #     left_targets = [joint.get_drive_target()[0] for joint in self.left_arm_joints]
+    #     right_targets = [joint.get_drive_target()[0] for joint in self.right_arm_joints]
+    #     print(f"Left drive targets set to: {[f'{t:.3f}' for t in left_targets]}")
+    #     print(f"Right drive targets set to: {[f'{t:.3f}' for t in right_targets]}")
+        
+    #     # Check drive properties
+    #     print(f"Left joint stiffness: {self.left_joint_stiffness}, damping: {self.left_joint_damping}")
+    #     print(f"Right joint stiffness: {self.right_joint_stiffness}, damping: {self.right_joint_damping}")
+        
+    #     # Give it 200 steps to move to target
+    #     for _step in range(200):
+    #         # # Apply passive force compensation (gravity, coriolis, centrifugal)
+    #         # self._entity_qf(self.left_entity)
+    #         # self._entity_qf(self.right_entity)
+            
+    #         self.scene.step()
+            
+    #         # Print progress every 50 steps
+    #         if _step % 50 == 0:
+    #             left_qpos = self.left_entity.get_qpos()
+    #             right_qpos = self.right_entity.get_qpos()
+    #             left_active_joints = self.left_entity.get_active_joints()
+    #             right_active_joints = self.right_entity.get_active_joints()
+    #             left_arm_qpos = [left_qpos[left_active_joints.index(joint)] for joint in self.left_arm_joints]
+    #             right_arm_qpos = [right_qpos[right_active_joints.index(joint)] for joint in self.right_arm_joints]
+    #             print(f"Step {_step} - Left qpos: {[f'{q:.3f}' for q in left_arm_qpos]}")
+    #             print(f"Step {_step} - Right qpos: {[f'{q:.3f}' for q in right_arm_qpos]}")
+            
+    #         # render every 4 simulation steps to make it faster
+    #         if viewer is not None and _step % 4 == 0:
+    #             self.scene.update_render()
+    #             viewer.render()
 
     def set_origin_endpose(self):
         self.left_original_pose = self.get_left_ee_pose()

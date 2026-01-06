@@ -127,6 +127,13 @@ def run(TASK_ENV, args):
         while suc_num < args["episode_num"]:
             try:
                 TASK_ENV.setup_demo(now_ep_num=suc_num, seed=epid, **args)
+                # Let sapien viewer pop up and render for a while to debug
+                if args["render_freq"]:
+                    TASK_ENV.viewer.set_camera_xyz(x=0.0, y=-0.5, z=1.2)
+                    TASK_ENV.viewer.set_camera_rpy(r=0.5, p=-0.4, y=0)
+                    for _ in range(1000):
+                        TASK_ENV.viewer.render()
+                
                 TASK_ENV.play_once()
 
                 if TASK_ENV.plan_success and TASK_ENV.check_success():
@@ -163,7 +170,8 @@ def run(TASK_ENV, args):
                 TASK_ENV.close_env()
 
                 if args["render_freq"]:
-                    TASK_ENV.viewer.close()
+                    # TASK_ENV.viewer.close()
+                    pass
                 time.sleep(1)
 
             epid += 1

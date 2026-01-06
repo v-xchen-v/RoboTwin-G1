@@ -27,6 +27,7 @@ class Robot:
         # self.dual_arm = dual_arm_tag
         # self.plan_success = True
 
+        self.scene = scene
         self.left_js = None
         self.right_js = None
 
@@ -105,8 +106,15 @@ class Robot:
             loader: sapien.URDFLoader = scene.create_urdf_loader()
             loader.fix_root_link = True
             self._entity = loader.load(self.left_urdf_path)
+            # Disable self-collision to prevent finger collisions
+            for link in self._entity.get_links():
+                for shape in link.get_collision_shapes():
+                    # Set collision groups to avoid self-collision
+                    shape.set_collision_groups([1, 1, 2, 0])  # Only collide with group 2 (ground)
             self.left_entity = self._entity
             self.right_entity = self._entity
+            pass
+        
         else:
             arms_dis = kwargs["embodiment_dis"]
             self.left_entity_origion_pose.p += [-arms_dis / 2, 0, 0]
@@ -132,7 +140,8 @@ class Robot:
                 self.right_conn.send({"cmd": "reset"})
                 _ = self.right_conn.recv()
         else:
-            if not isinstance(self.left_planner, CuroboPlanner) or not isinstance(self.right_planner, CuroboPlanner):
+            # Using MPLib - always reinitialize planner
+            if not isinstance(self.left_planner, MplibPlanner) or not isinstance(self.right_planner, MplibPlanner):
                 self.set_planner(scene=scene)
 
         self.init_joints()
@@ -212,27 +221,142 @@ class Robot:
         for i, joint in enumerate(self.left_active_joints):
             if joint not in self.left_gripper:
                 joint.set_drive_property(stiffness=self.left_joint_stiffness, damping=self.left_joint_damping)
+                # Extra: set armature to improve arm stability
+                joint.set_armature([0.5])
         for i, joint in enumerate(self.right_active_joints):
             if joint not in self.right_gripper:
                 joint.set_drive_property(
                     stiffness=self.right_joint_stiffness,
                     damping=self.right_joint_damping,
                 )
-
+                # Extra: set armature to improve arm stability
+                joint.set_armature([0.5])
+        """
+        gripper_name:
+        - base: "left_gripper_joint"
+            mimic: [
+                    ["left_narrow2_joint", 0.02, 0.],
+                    ["left_narrow3_joint", 0.4, 0.],
+                    ["left_narrow_loop_joint", 1.5, 0.],
+                    ["left_wide1_joint", 1.0, 0.],
+                    ["left_wide2_joint", 0.02, 0.],
+                    ["left_wide3_joint", 0.4, 0.],
+                    ["left_wide_loop_joint", 1.5, 0.],
+                ]
+        - base: "right_gripper_joint"
+            mimic: [
+                    ["right_narrow2_joint", 0.02, 0.],
+                    ["right_narrow3_joint", 0.4, 0.],
+                    ["right_narrow_loop_joint", 1.5, 0.],
+                    ["right_wide1_joint", 1.0, 0.],
+                    ["right_wide2_joint", 0.02, 0.],
+                    ["right_wide3_joint", 0.4, 0.],
+                    ["right_wide_loop_joint", 1.5, 0.],
+                ]
+        """
         for joint in self.left_gripper:
-            joint[0].set_drive_property(stiffness=self.left_gripper_stiffness, damping=self.left_gripper_damping)
+            # TODO: hard code now, need to be modified for different grippers
+            joint_name = joint[0].get_name()
+            if joint_name != "left_gripper_joint":
+                # If is mimic joint, set damping to 0
+                joint[0].set_drive_property(stiffness=1000, damping=0)
+            else:
+                joint[0].set_drive_property(
+                    stiffness=self.left_gripper_stiffness, 
+                    damping=self.left_gripper_damping, 
+                    force_limit=200)
+            
         for joint in self.right_gripper:
-            joint[0].set_drive_property(
-                stiffness=self.right_gripper_stiffness,
-                damping=self.right_gripper_damping,
-            )
+            joint_name = joint[0].get_name()
+            if joint_name != "right_gripper_joint":
+                # If is mimic joint, set damping to 0
+                joint[0].set_drive_property(stiffness=1000, damping=0)
+            else:
+                joint[0].set_drive_property(
+                    stiffness=self.right_gripper_stiffness,
+                    damping=self.right_gripper_damping,
+                    force_limit=200
+                )
 
-    def move_to_homestate(self):
+    def move_to_homestate(self, viewer=None):
         for i, joint in enumerate(self.left_arm_joints):
             joint.set_drive_target(self.left_homestate[i])
 
         for i, joint in enumerate(self.right_arm_joints):
             joint.set_drive_target(self.right_homestate[i])
+            
+    # def move_to_homestate(self, viewer=None):
+    #     # ----------- Set initial robot pose -----------
+    #     left_qpos = self.left_entity.get_qpos()
+    #     right_qpos = self.right_entity.get_qpos()
+    #     left_active_joints = self.left_entity.get_active_joints()
+    #     right_active_joints = self.right_entity.get_active_joints()
+        
+    #     # Set arm joint positions to homestate
+    #     for i, joint in enumerate(self.left_arm_joints):
+    #         left_qpos[left_active_joints.index(joint)] = self.left_homestate[i]
+    #     for i, joint in enumerate(self.right_arm_joints):
+    #         right_qpos[right_active_joints.index(joint)] = self.right_homestate[i]
+        
+    #     # Set gripper positions to fully open
+    #     for joint in self.left_gripper:
+    #         left_qpos[left_active_joints.index(joint[0])] = self.left_gripper_scale[1]
+    #     for joint in self.right_gripper:
+    #         right_qpos[right_active_joints.index(joint[0])] = self.right_gripper_scale[1]
+        
+    #     # Apply the qpos to entities
+    #     self.left_entity.set_qpos(left_qpos)
+    #     self.right_entity.set_qpos(right_qpos)
+    #     # ---------- Set initial robot pose end ----------
+        
+        
+    #     # Set drive targets once before simulation loop
+    #     for i, joint in enumerate(self.left_arm_joints):
+    #         joint.set_drive_target(self.left_homestate[i])
+    #     for i, joint in enumerate(self.right_arm_joints):
+    #         joint.set_drive_target(self.right_homestate[i])
+        
+    #     print(f"Left homestate targets: {self.left_homestate}")
+    #     print(f"Right homestate targets: {self.right_homestate}")
+        
+    #     for i, joint in enumerate(self.left_gripper):
+    #         joint[0].set_drive_target(self.left_gripper_scale[1]) # fully open
+    #     for i, joint in enumerate(self.right_gripper):
+    #         joint[0].set_drive_target(self.right_gripper_scale[1]) # fully open
+        
+    #     # Verify targets are set
+    #     left_targets = [joint.get_drive_target()[0] for joint in self.left_arm_joints]
+    #     right_targets = [joint.get_drive_target()[0] for joint in self.right_arm_joints]
+    #     print(f"Left drive targets set to: {[f'{t:.3f}' for t in left_targets]}")
+    #     print(f"Right drive targets set to: {[f'{t:.3f}' for t in right_targets]}")
+        
+    #     # Check drive properties
+    #     print(f"Left joint stiffness: {self.left_joint_stiffness}, damping: {self.left_joint_damping}")
+    #     print(f"Right joint stiffness: {self.right_joint_stiffness}, damping: {self.right_joint_damping}")
+        
+    #     # Give it 200 steps to move to target
+    #     for _step in range(200):
+    #         # # Apply passive force compensation (gravity, coriolis, centrifugal)
+    #         # self._entity_qf(self.left_entity)
+    #         # self._entity_qf(self.right_entity)
+            
+    #         self.scene.step()
+            
+    #         # Print progress every 50 steps
+    #         if _step % 50 == 0:
+    #             left_qpos = self.left_entity.get_qpos()
+    #             right_qpos = self.right_entity.get_qpos()
+    #             left_active_joints = self.left_entity.get_active_joints()
+    #             right_active_joints = self.right_entity.get_active_joints()
+    #             left_arm_qpos = [left_qpos[left_active_joints.index(joint)] for joint in self.left_arm_joints]
+    #             right_arm_qpos = [right_qpos[right_active_joints.index(joint)] for joint in self.right_arm_joints]
+    #             print(f"Step {_step} - Left qpos: {[f'{q:.3f}' for q in left_arm_qpos]}")
+    #             print(f"Step {_step} - Right qpos: {[f'{q:.3f}' for q in right_arm_qpos]}")
+            
+    #         # render every 4 simulation steps to make it faster
+    #         if viewer is not None and _step % 4 == 0:
+    #             self.scene.update_render()
+    #             viewer.render()
 
     def set_origin_endpose(self):
         self.left_original_pose = self.get_left_ee_pose()
@@ -255,77 +379,86 @@ class Robot:
         print("right ee: ", self.right_ee.get_name())
 
     def set_planner(self, scene=None):
-        abs_left_curobo_yml_path = os.path.join(CONFIGS.ROOT_PATH, self.left_curobo_yml_path)
-        abs_right_curobo_yml_path = os.path.join(CONFIGS.ROOT_PATH, self.right_curobo_yml_path)
+        # ============== Use MPLib as primary planner ==============
+        # Comment out CuroboPlanner initialization to use MPLib only
+        # abs_left_curobo_yml_path = os.path.join(CONFIGS.ROOT_PATH, self.left_curobo_yml_path)
+        # abs_right_curobo_yml_path = os.path.join(CONFIGS.ROOT_PATH, self.right_curobo_yml_path)
 
-        self.communication_flag = (abs_left_curobo_yml_path != abs_right_curobo_yml_path)
+        # self.communication_flag = (abs_left_curobo_yml_path != abs_right_curobo_yml_path)
 
-        if self.is_dual_arm:
-            abs_left_curobo_yml_path = abs_left_curobo_yml_path.replace("curobo.yml", "curobo_left.yml")
-            abs_right_curobo_yml_path = abs_right_curobo_yml_path.replace("curobo.yml", "curobo_right.yml")
+        # if self.is_dual_arm:
+        #     abs_left_curobo_yml_path = abs_left_curobo_yml_path.replace("curobo.yml", "curobo_left.yml")
+        #     abs_right_curobo_yml_path = abs_right_curobo_yml_path.replace("curobo.yml", "curobo_right.yml")
 
-        if not self.communication_flag:
-            self.left_planner = CuroboPlanner(self.left_entity_origion_pose,
-                                              self.left_arm_joints_name,
-                                              [joint.get_name() for joint in self.left_entity.get_active_joints()],
-                                              yml_path=abs_left_curobo_yml_path)
-            self.right_planner = CuroboPlanner(self.right_entity_origion_pose,
-                                               self.right_arm_joints_name,
-                                               [joint.get_name() for joint in self.right_entity.get_active_joints()],
-                                               yml_path=abs_right_curobo_yml_path)
-        else:
-            self.left_conn, left_child_conn = mp.Pipe()
-            self.right_conn, right_child_conn = mp.Pipe()
+        # if not self.communication_flag:
+        #     self.left_planner = CuroboPlanner(self.left_entity_origion_pose,
+        #                                       self.left_arm_joints_name,
+        #                                       [joint.get_name() for joint in self.left_entity.get_active_joints()],
+        #                                       yml_path=abs_left_curobo_yml_path)
+        #     self.right_planner = CuroboPlanner(self.right_entity_origion_pose,
+        #                                        self.right_arm_joints_name,
+        #                                        [joint.get_name() for joint in self.right_entity.get_active_joints()],
+        #                                        yml_path=abs_right_curobo_yml_path)
+        # else:
+        #     self.left_conn, left_child_conn = mp.Pipe()
+        #     self.right_conn, right_child_conn = mp.Pipe()
 
-            left_args = {
-                "origin_pose": self.left_entity_origion_pose,
-                "joints_name": self.left_arm_joints_name,
-                "all_joints": [joint.get_name() for joint in self.left_entity.get_active_joints()],
-                "yml_path": abs_left_curobo_yml_path
-            }
+        #     left_args = {
+        #         "origin_pose": self.left_entity_origion_pose,
+        #         "joints_name": self.left_arm_joints_name,
+        #         "all_joints": [joint.get_name() for joint in self.left_entity.get_active_joints()],
+        #         "yml_path": abs_left_curobo_yml_path
+        #     }
 
-            right_args = {
-                "origin_pose": self.right_entity_origion_pose,
-                "joints_name": self.right_arm_joints_name,
-                "all_joints": [joint.get_name() for joint in self.right_entity.get_active_joints()],
-                "yml_path": abs_right_curobo_yml_path
-            }
+        #     right_args = {
+        #         "origin_pose": self.right_entity_origion_pose,
+        #         "joints_name": self.right_arm_joints_name,
+        #         "all_joints": [joint.get_name() for joint in self.right_entity.get_active_joints()],
+        #         "yml_path": abs_right_curobo_yml_path
+        #     }
 
-            self.left_proc = mp.Process(target=planner_process_worker, args=(left_child_conn, left_args))
-            self.right_proc = mp.Process(target=planner_process_worker, args=(right_child_conn, right_args))
+        #     self.left_proc = mp.Process(target=planner_process_worker, args=(left_child_conn, left_args))
+        #     self.right_proc = mp.Process(target=planner_process_worker, args=(right_child_conn, right_args))
 
-            self.left_proc.daemon = True
-            self.right_proc.daemon = True
+        #     self.left_proc.daemon = True
+        #     self.right_proc.daemon = True
 
-            self.left_proc.start()
-            self.right_proc.start()
+        #     self.left_proc.start()
+        #     self.right_proc.start()
+
+        # Use MPLib as the primary planner
+        self.communication_flag = False
+        self.left_planner = MplibPlanner(
+            self.left_urdf_path,
+            self.left_srdf_path,
+            self.left_move_group,
+            self.left_entity_origion_pose,
+            self.left_entity,
+            self.left_planner_type,
+            scene,
+        )
+        self.right_planner = MplibPlanner(
+            self.right_urdf_path,
+            self.right_srdf_path,
+            self.right_move_group,
+            self.right_entity_origion_pose,
+            self.right_entity,
+            self.right_planner_type,
+            scene,
+        )
 
         if self.need_topp:
-            self.left_mplib_planner = MplibPlanner(
-                self.left_urdf_path,
-                self.left_srdf_path,
-                self.left_move_group,
-                self.left_entity_origion_pose,
-                self.left_entity,
-                self.left_planner_type,
-                scene,
-            )
-            self.right_mplib_planner = MplibPlanner(
-                self.right_urdf_path,
-                self.right_srdf_path,
-                self.right_move_group,
-                self.right_entity_origion_pose,
-                self.right_entity,
-                self.right_planner_type,
-                scene,
-            )
+            self.left_mplib_planner = self.left_planner
+            self.right_mplib_planner = self.right_planner
 
     def update_world_pcd(self, world_pcd):
-        try:
-            self.left_planner.update_point_cloud(world_pcd, resolution=0.02)
-            self.right_planner.update_point_cloud(world_pcd, resolution=0.02)
-        except:
-            print("Update world pointcloud wrong!")
+        # MPLib doesn't have update_point_cloud method, skip this
+        # try:
+        #     self.left_planner.update_point_cloud(world_pcd, resolution=0.02)
+        #     self.right_planner.update_point_cloud(world_pcd, resolution=0.02)
+        # except:
+        #     print("Update world pointcloud wrong!")
+        pass
 
     def _trans_from_gripper_to_endlink(self, target_pose, arm_tag=None):
         gripper_bias = (self.left_gripper_bias if arm_tag == "left" else self.right_gripper_bias)
@@ -593,11 +726,13 @@ class Robot:
         global_trans_matrix = (self.left_global_trans_matrix if arm_tag == "left" else self.right_global_trans_matrix)
         delta_matrix = (self.left_delta_matrix if arm_tag == "left" else self.right_delta_matrix)
         ee_pose = (self.left_ee.global_pose if arm_tag == "left" else self.right_ee.global_pose)
+        print(f"[DEBUG] ee_pose: {ee_pose.p}") # [nan, nan, nan]
         endpose_arr = np.eye(4)
         endpose_arr[:3, :3] = (t3d.quaternions.quat2mat(ee_pose.q) @ global_trans_matrix @ delta_matrix)
         dis = gripper_bias
         if is_endpose == False:
             dis -= 0.12
+        print(f"[DEBUG] ee_pose: {ee_pose.p}")
         endpose_arr[:3, 3] = ee_pose.p + endpose_arr[:3, :3] @ np.array([dis, 0, 0]).T
         res = (endpose_arr[:3, 3].tolist() + t3d.quaternions.mat2quat(endpose_arr[:3, :3]).tolist())
         return res

@@ -1,0 +1,70 @@
+# Adapted from aloha-agilex: assets/embodiments/aloha-agilex/config.yml
+
+urdf_path: "./agibot_g1_with_omnipicker.urdf"
+srdf_path: "./agibot_g1_with_omnipicker_mplib.srdf"
+
+# How to set gripper master/mimic joint with different stiffness/damping? How to configure the force limits?
+joint_stiffness: 2000
+joint_damping: 100
+gripper_stiffness: 100
+gripper_damping: 10
+
+# How to set the move group?
+move_group: ["arm_l_end_link","arm_r_end_link"]
+ee_joints: ["left_joint7", "right_joint7"]
+arm_joints_name: [["left_joint1", "left_joint2", "left_joint3", "left_joint4", "left_joint5", "left_joint6", "left_joint7"], ["right_joint1", "right_joint2", "right_joint3", "right_joint4", "right_joint5", "right_joint6", "right_joint7"]]
+gripper_name:
+  - base: "left_gripper_joint"
+    mimic: [
+              ["left_narrow2_joint", 0.02, 0.],
+              ["left_narrow3_joint", 0.4, 0.],
+              ["left_narrow_loop_joint", 1.5, 0.],
+              ["left_wide1_joint", 1.0, 0.],
+              ["left_wide2_joint", 0.02, 0.],
+              ["left_wide3_joint", 0.4, 0.],
+              ["left_wide_loop_joint", 1.5, 0.],
+           ]
+  - base: "right_gripper_joint"
+    mimic: [
+              ["right_narrow2_joint", 0.02, 0.],
+              ["right_narrow3_joint", 0.4, 0.],
+              ["right_narrow_loop_joint", 1.5, 0.],
+              ["right_wide1_joint", 1.0, 0.],
+              ["right_wide2_joint", 0.02, 0.],
+              ["right_wide3_joint", 0.4, 0.],
+              ["right_wide_loop_joint", 1.5, 0.],
+           ]
+
+# How to adjust?
+gripper_bias: 0.12
+# gripper_scale: [-0.01, 0.045]
+gripper_scale: [0.1, 0.78]
+homestate: [[0,0,0,0,0,0,0], [0,0,0,0,0,0,0]]
+
+# how to adjust delta matrix?
+delta_matrix: [[1,0,0],[0,1,0],[0,0,1]]
+# delta_matrix: [[0,-1,0],[1,0,0],[0,0,1]] # 90° rotation around Z-axis:
+# delta_matrix: [[0,0,1],[0,-1,0],[1,0,0]]
+# global_trans_matrix: [[1,0,0],[0,-1,0],[0,0,-1]]
+global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
+
+
+# Initial robot pose in the scene, [[x, y, z, qw, qx, qy, qz]]
+robot_pose: [[0, -0.75, 0.0, 0.707, 0, 0, 0.707]]
+
+
+planner: "mplib_screw"
+#planner: "curobo"
+
+dual_arm: True
+
+rotate_lim: [0, 1]
+
+grasp_perfect_direction: ['front_right', 'front_left']
+
+# static_camera_list: [] # Empty list - only using robot link mounted cameras
+static_camera_list: 
+- name: head_camera
+  position: [0.0, 0.8, 0.9]
+  forward: [0, -1, 0]
+  left: [1, 0, 0]

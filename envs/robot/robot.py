@@ -213,12 +213,16 @@ class Robot:
         for i, joint in enumerate(self.left_active_joints):
             if joint not in self.left_gripper:
                 joint.set_drive_property(stiffness=self.left_joint_stiffness, damping=self.left_joint_damping)
+                # Extra: set armature to improve arm stability
+                joint.set_armature([0.5])
         for i, joint in enumerate(self.right_active_joints):
             if joint not in self.right_gripper:
                 joint.set_drive_property(
                     stiffness=self.right_joint_stiffness,
                     damping=self.right_joint_damping,
                 )
+                # Extra: set armature to improve arm stability
+                joint.set_armature([0.5])
 
         for joint in self.left_gripper:
             joint[0].set_drive_property(stiffness=self.left_gripper_stiffness, damping=self.left_gripper_damping)
@@ -603,11 +607,13 @@ class Robot:
         global_trans_matrix = (self.left_global_trans_matrix if arm_tag == "left" else self.right_global_trans_matrix)
         delta_matrix = (self.left_delta_matrix if arm_tag == "left" else self.right_delta_matrix)
         ee_pose = (self.left_ee.global_pose if arm_tag == "left" else self.right_ee.global_pose)
+        print(f"[DEBUG] ee_pose: {ee_pose.p}") # [nan, nan, nan]
         endpose_arr = np.eye(4)
         endpose_arr[:3, :3] = (t3d.quaternions.quat2mat(ee_pose.q) @ global_trans_matrix @ delta_matrix)
         dis = gripper_bias
         if is_endpose == False:
             dis -= 0.12
+        print(f"[DEBUG] ee_pose: {ee_pose.p}")
         endpose_arr[:3, 3] = ee_pose.p + endpose_arr[:3, :3] @ np.array([dis, 0, 0]).T
         res = (endpose_arr[:3, 3].tolist() + t3d.quaternions.mat2quat(endpose_arr[:3, :3]).tolist())
         return res

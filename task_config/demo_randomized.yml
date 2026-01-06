@@ -1,6 +1,6 @@
 # if you want to modify the config, please check the following tutorial first:
 # https://robotwin-platform.github.io/doc/usage/configurations.html
-render_freq: 0
+render_freq: 1  # Set to 1 to enable viewer (renders every frame), 0 to disable, or higher number to render less frequently
 episode_num: 50
 use_seed: false
 save_freq: 15

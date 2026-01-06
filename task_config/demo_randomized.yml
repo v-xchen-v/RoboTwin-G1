@@ -4,7 +4,8 @@ render_freq: 0
 episode_num: 50
 use_seed: false
 save_freq: 15
-embodiment: [aloha-agilex]
+# embodiment: [aloha-agilex]
+embodiment: [g1-omnipicker]
 language_num: 100
 domain_randomization:
   random_background: true

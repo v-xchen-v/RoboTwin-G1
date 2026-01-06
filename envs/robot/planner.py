@@ -432,3 +432,46 @@ class MplibPlanner:
         res["per_step"] = per_step  # dis per step
         res["result"] = vals
         return res
+
+    def plan_batch(
+        self,
+        now_qpos,
+        target_pose_list,
+        constraint_pose=None,
+        arms_tag=None,
+    ):
+        """
+        Plan a batch of trajectories for multiple target poses using MPLib.
+        Plans each pose sequentially and returns results in batch format.
+        """
+        num_poses = len(target_pose_list)
+        status_list = []
+        position_list = []
+        velocity_list = []
+        
+        for target_pose in target_pose_list:
+            result = self.plan_path(
+                now_qpos,
+                target_pose,
+                use_point_cloud=False,
+                use_attach=False,
+                arms_tag=arms_tag,
+                log=False,
+            )
+            
+            if result["status"] == "Success":
+                status_list.append("Success")
+                position_list.append(result["position"])
+                velocity_list.append(result["velocity"])
+            else:
+                status_list.append("Failure")
+                # Add dummy data for failed planning
+                position_list.append(np.array([[0.0] * len(now_qpos)]))
+                velocity_list.append(np.array([[0.0] * len(now_qpos)]))
+        
+        res_result = {
+            "status": np.array(status_list, dtype=object),
+            "position": np.array(position_list, dtype=object),
+            "velocity": np.array(velocity_list, dtype=object),
+        }
+        return res_result

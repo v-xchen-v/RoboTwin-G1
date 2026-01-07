@@ -28,6 +28,7 @@ class Robot:
         # self.plan_success = True
 
         self.scene = scene
+        self.viewer = kwargs.get("viewer", None)
         self.left_js = None
         self.right_js = None
 
@@ -518,6 +519,8 @@ class Robot:
                 target_lst_copy,
                 constraint_pose=constraint_pose,
                 arms_tag="left",
+                scene=self.scene,
+                viewer=self.viewer
             )
 
     def right_plan_multi_path(
@@ -553,6 +556,8 @@ class Robot:
                 target_lst_copy,
                 constraint_pose=constraint_pose,
                 arms_tag="right",
+                scene=self.scene,
+                viewer=self.viewer
             )
 
     def left_plan_path(

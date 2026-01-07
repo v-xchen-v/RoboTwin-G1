@@ -4,6 +4,7 @@ import numpy as np
 import pdb
 import traceback
 import numpy as np
+import sapien
 import toppra as ta
 from mplib.sapien_utils import SapienPlanner, SapienPlanningWorld
 import transforms3d as t3d
@@ -433,12 +434,73 @@ class MplibPlanner:
         res["result"] = vals
         return res
 
+    def create_rgb_axis_marker(
+        self,
+        scene: sapien.Scene,
+        axis_len=0.1,
+        axis_radius=0.003,
+        name="target_pose_marker",
+    ):
+        # --- materials ---
+        mat_x = sapien.render.RenderMaterial()
+        mat_x.set_base_color([1.0, 0.0, 0.0, 1.0])  # Red
+
+        mat_y = sapien.render.RenderMaterial()
+        mat_y.set_base_color([0.0, 1.0, 0.0, 1.0])  # Green
+
+        mat_z = sapien.render.RenderMaterial()
+        mat_z.set_base_color([0.0, 0.0, 1.0, 1.0])  # Blue
+
+        builder = scene.create_actor_builder()
+
+        def quat_from_axis_angle(axis, angle):
+            axis = np.asarray(axis, dtype=np.float64)
+            axis = axis / (np.linalg.norm(axis) + 1e-12)
+            s = np.sin(angle / 2.0)
+            return [np.cos(angle / 2.0), axis[0] * s, axis[1] * s, axis[2] * s]
+
+        # Capsule long axis is local +X in your build:
+        # X axis: identity
+        q_x = [1.0, 0.0, 0.0, 0.0]
+
+        # Y axis: rotate +X -> +Y ( +90° about +Z )
+        q_y = quat_from_axis_angle([0, 0, 1], np.pi / 2)
+
+        # Z axis: rotate +X -> +Z ( -90° about +Y )
+        q_z = quat_from_axis_angle([0, 1, 0], -np.pi / 2)
+
+        half = axis_len / 2
+
+        # Place each capsule so it starts at the origin and extends outward
+        builder.add_capsule_visual(
+            pose=sapien.Pose([half, 0, 0], q_x),
+            radius=axis_radius,
+            half_length=half,
+            material=mat_x,
+        )
+        builder.add_capsule_visual(
+            pose=sapien.Pose([0, half, 0], q_y),
+            radius=axis_radius,
+            half_length=half,
+            material=mat_y,
+        )
+        builder.add_capsule_visual(
+            pose=sapien.Pose([0, 0, half], q_z),
+            radius=axis_radius,
+            half_length=half,
+            material=mat_z,
+        )
+        marker = builder.build_static(name=name)
+        return marker
+
     def plan_batch(
         self,
         now_qpos,
         target_pose_list,
         constraint_pose=None,
         arms_tag=None,
+        scene=None,
+        viewer=None,
     ):
         """
         Plan a batch of trajectories for multiple target poses using MPLib.
@@ -458,6 +520,19 @@ class MplibPlanner:
                 arms_tag=arms_tag,
                 log=False,
             )
+            
+            # Visualize the target pose in sapien for debugging
+            if scene is not None and viewer is not None:
+                marker = self.create_rgb_axis_marker(scene, name="target_marker_temp")
+                marker.set_pose(target_pose)
+                
+            # sim loop here for a while to visualize the marker
+            # [DEBUG]
+            for _ in range(500):
+                scene.step()
+                scene.update_render()
+                viewer.render()
+            
             
             if result["status"] == "Success":
                 status_list.append("Success")

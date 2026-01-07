@@ -114,6 +114,10 @@ class Base_Task(gym.Env):
         self.right_joint_path = kwags.get("right_joint_path", [])
         self.left_cnt = 0
         self.right_cnt = 0
+        
+        # pass viewer to kwags for robot debugging visualization
+        if self.render_freq:
+            kwags["viewer"] = self.viewer
 
         self.instruction = None  # for Eval
 

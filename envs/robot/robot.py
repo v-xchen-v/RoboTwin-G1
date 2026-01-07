@@ -266,6 +266,7 @@ class Robot:
                     stiffness=self.left_gripper_stiffness, 
                     damping=self.left_gripper_damping, 
                     force_limit=200)
+            joint[0].set_armature([0.05])
             
         for joint in self.right_gripper:
             joint_name = joint[0].get_name()
@@ -278,6 +279,7 @@ class Robot:
                     damping=self.right_gripper_damping,
                     force_limit=200
                 )
+            joint[0].set_armature([0.05])
 
     def move_to_homestate(self, viewer=None):
         for i, joint in enumerate(self.left_arm_joints):

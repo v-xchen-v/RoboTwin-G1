@@ -43,8 +43,10 @@ homestate: [[0,0,0,0,0,0,0], [0,0,0,0,0,0,0]]
 
 # how to adjust delta matrix?
 # delta_matrix: [[1,0,0],[0,1,0],[0,0,1]]
-delta_matrix: [[0,-1,0],[1,0,0],[0,0,1]] # 90° rotation around Z-axis:
-# delta_matrix: [[0,0,1],[0,-1,0],[1,0,0]]
+# delta_matrix: [[0,-1,0],[1,0,0],[0,0,1]] # 90° rotation around Z-axis:
+# # delta_matrix: [[0,0,1],[0,1,0],[-1,0,0]] # 90° rotation around Y-axis:
+# delta_matrix: [[0, 0, 1], [1, 0, 0], [0, 1, 0]] # first 90° rotation around Z-axis, then 90° rotation around Y-axis:
+delta_matrix: [[0, -1, 0], [0, 0, -1], [1, 0, 0]] # first 90° rotation around x-axis, then 90° rotation around X-axis:
 # global_trans_matrix: [[1,0,0],[0,-1,0],[0,0,-1]]
 global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
 

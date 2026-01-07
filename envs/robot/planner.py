@@ -399,6 +399,7 @@ class MplibPlanner:
         self,
         now_qpos,
         target_pose,
+        constraint_pose=None,
         use_point_cloud=False,
         use_attach=False,
         arms_tag=None,
@@ -408,6 +409,7 @@ class MplibPlanner:
         Interpolative planning with screw motion.
         Will not avoid collision and will fail if the path contains collision.
         """
+        # Note: constraint_pose is accepted but not currently used by MPLib planner
         if self.planner_type == "mplib_RRT":
             result = self.plan_pose(
                 now_qpos,

@@ -131,7 +131,8 @@ def run(TASK_ENV, args):
                 if args["render_freq"]:
                     TASK_ENV.viewer.set_camera_xyz(x=0.0, y=-0.5, z=1.2)
                     TASK_ENV.viewer.set_camera_rpy(r=0.5, p=-0.4, y=0)
-                    for _ in range(1000):
+                    # [DEBUG] render for a while
+                    for _ in range(200):
                         TASK_ENV.viewer.render()
                 
                 TASK_ENV.play_once()

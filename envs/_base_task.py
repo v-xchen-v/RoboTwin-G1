@@ -1352,10 +1352,6 @@ class Base_Task(gym.Env):
                 pre_dis=dis,
                 **args,
             )
-            # delta_matrix = np.eye(4)
-            # delta_matrix[:3, :3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
-            # place_pre_pose = place_pre_pose @ delta_matrix
-            # place_pose = place_pose @ delta_matrix
         else:
             place_pre_pose = [0, 0, 0, 0, 0, 0, 0]
             place_pose = [0, 0, 0, 0, 0, 0, 0]

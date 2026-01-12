@@ -115,8 +115,8 @@ class Robot:
             # Increase gripper friction
             # Create a high-friction material
             sticky_mat = scene.create_physical_material(
-                static_friction=2.0, 
-                dynamic_friction=2.0, 
+                static_friction=3.0, 
+                dynamic_friction=3.0, 
                 restitution=0.0
             )
 
@@ -275,7 +275,7 @@ class Robot:
             joint_name = joint[0].get_name()
             if joint_name != "left_gripper_joint":
                 # If is mimic joint, set damping to 0
-                joint[0].set_drive_property(stiffness=1000, damping=0, force_limit=200)
+                joint[0].set_drive_property(stiffness=2000, damping=0, force_limit=500)
             else:
                 joint[0].set_drive_property(
                     stiffness=self.left_gripper_stiffness, 
@@ -287,7 +287,7 @@ class Robot:
             joint_name = joint[0].get_name()
             if joint_name != "right_gripper_joint":
                 # If is mimic joint, set damping to 0
-                joint[0].set_drive_property(stiffness=1000, damping=0, force_limit=200)
+                joint[0].set_drive_property(stiffness=2000, damping=0, force_limit=200)
             else:
                 joint[0].set_drive_property(
                     stiffness=self.right_gripper_stiffness,

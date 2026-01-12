@@ -48,8 +48,8 @@ class beat_block_hammer(Base_Task):
         # set friction of hammer
         # Create a high-friction material
         sticky_mat = self.scene.create_physical_material(
-            static_friction=2.0, 
-            dynamic_friction=2.0, 
+            static_friction=5.0, 
+            dynamic_friction=5.0, 
             restitution=0.0
         )
 
@@ -58,6 +58,14 @@ class beat_block_hammer(Base_Task):
             sapien.physx.PhysxRigidBaseComponent
         ).get_collision_shapes():
             shape.set_physical_material(sticky_mat)
+            shape.set_rest_offset(0.0)
+            shape.set_contact_offset(0.005)
+            
+        # hammer_body = self.hammer.actor.find_component_by_type(sapien.physx.PhysxRigidDynamicComponent)
+        # hammer_body.solver_position_iterations = 64
+        # hammer_body.solver_velocity_iterations = 8
+        # print(f"Set cube solver iterations: pos={hammer_body.solver_position_iterations}, vel={hammer_body.solver_velocity_iterations}")
+
 
         self.add_prohibit_area(self.hammer, padding=0.10)
         self.prohibited_area.append([
@@ -75,8 +83,9 @@ class beat_block_hammer(Base_Task):
 
         # Grasp the hammer with the selected arm
         self.move(self.grasp_actor(self.hammer, arm_tag=arm_tag, pre_grasp_dis=0.12, grasp_dis=0.01))
+        
         # Move the hammer upwards
-        # self.move(self.move_by_displacement(arm_tag, z=0.01, move_axis="arm"))
+        # self.move(self.move_by_displacement(arm_tag, z=0.05, move_axis="world"))
 
         # Place the hammer on the block's functional point (position 1)
         predefined=self.block.get_functional_point(1, "pose")
@@ -88,8 +97,8 @@ class beat_block_hammer(Base_Task):
                 target_pose=sapien.Pose(predefined_adapt_p, predefined.q),
                 arm_tag=arm_tag,
                 functional_point_id=0,
-                pre_dis=0.06,
-                dis=0,
+                pre_dis=0.02,
+                dis=-0.05,
                 is_open=False,
             ))
 

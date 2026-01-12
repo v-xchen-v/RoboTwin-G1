@@ -350,7 +350,7 @@ class MplibPlanner:
             result = self.planner.plan_pose(
                 goal_pose=target_pose,
                 current_qpos=np.array(now_qpos),
-                time_step=1 / 250,
+                time_step=1 / 500,
                 planning_time=5,
                 # rrt_range=0.05
                 # =================== mplib 0.1.1 ===================

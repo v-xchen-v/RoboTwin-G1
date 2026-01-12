@@ -52,7 +52,7 @@ global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
 
 
 # Initial robot pose in the scene, [[x, y, z, qw, qx, qy, qz]]
-robot_pose: [[-0.1, -0.75, 0.26, 0.707, 0, 0, 0.707]]
+robot_pose: [[0.0, -0.78, 0.26, 0.707, 0, 0, 0.707]]
 
 
 planner: "mplib_RRT" # mplib_RRT or mplib_screw

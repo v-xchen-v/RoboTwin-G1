@@ -327,10 +327,24 @@ class MplibPlanner:
         arms_tag=None,
         try_times=2,
         log=True,
+        scene=None,
+        viewer=None,
     ):
         result = {}
         result["status"] = "Fail"
 
+        # Visualize the target pose in sapien for debugging
+        if scene is not None and viewer is not None:
+            marker = self.create_rgb_axis_marker(scene, name="target_marker_temp")
+            marker.set_pose(target_pose)
+            
+            # sim loop here for a while to visualize the marker
+            # [DEBUG]
+            for _ in range(2):
+                scene.step()
+                scene.update_render()
+                viewer.render()
+                
         now_try_times = 1
         while result["status"] != "Success" and now_try_times < try_times:
             result = self.planner.plan_pose(
@@ -404,6 +418,8 @@ class MplibPlanner:
         use_attach=False,
         arms_tag=None,
         log=True,
+        scene=None,
+        viewer=None,
     ):
         """
         Interpolative planning with screw motion.
@@ -419,6 +435,8 @@ class MplibPlanner:
                 arms_tag,
                 try_times=10,
                 log=log,
+                scene=scene,
+                viewer=viewer,
             )
         elif self.planner_type == "mplib_screw":
             result = self.plan_screw(now_qpos, target_pose, use_point_cloud, use_attach, arms_tag, log)
@@ -530,7 +548,7 @@ class MplibPlanner:
                 
             # sim loop here for a while to visualize the marker
             # [DEBUG]
-            for _ in range(50):
+            for _ in range(5):
                 scene.step()
                 scene.update_render()
                 viewer.render()

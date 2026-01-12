@@ -784,7 +784,8 @@ class Base_Task(gym.Env):
             pose = pose.p.tolist() + pose.q.tolist()
 
         if self.need_plan:
-            right_result = self.robot.right_plan_path(pose, constraint_pose=constraint_pose)
+            right_result = self.robot.right_plan_path(pose, constraint_pose=constraint_pose,
+                                                      scene=self.scene, viewer=self.viewer)
             self.right_joint_path.append(deepcopy(right_result))
         else:
             right_result = deepcopy(self.right_joint_path[self.right_cnt])
@@ -1287,13 +1288,24 @@ class Base_Task(gym.Env):
         target_point = (start2target @ (actor_matrix[:3, 3] - place_start_pose.p).reshape(3, 1)).reshape(3) + np.array(
             place_pose[:3])
 
+        # delta_matrix = np.eye(4)
+        # delta_matrix = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]]) 
+        # delta_matrix = np.array([[0, 0, 1], [0, 0, -1], [0, 1, 0]])
+        delta_matrix = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]) # z: 90
+
         ee_pose_matrix = t3d.quaternions.quat2mat(end_effector_pose[-4:])
-        target_grasp_matrix = start2target @ ee_pose_matrix
+        target_grasp_matrix =  start2target @ ee_pose_matrix
 
         res_matrix = np.eye(4)
+        # delta_matrix = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
         res_matrix[:3, 3] = actor_matrix[:3, 3] - end_effector_pose[:3]
         res_matrix[:3, 3] = np.linalg.inv(ee_pose_matrix) @ res_matrix[:3, 3]
         target_grasp_qpose = t3d.quaternions.mat2quat(target_grasp_matrix)
+        
+        
+        q = t3d.quaternions.quat2mat(target_grasp_qpose)
+        q = q @ delta_matrix
+        qq = t3d.quaternions.mat2quat(q)
 
         grasp_bias = target_grasp_matrix @ res_matrix[:3, 3]
         if pre_dis_axis == "grasp":
@@ -1307,7 +1319,7 @@ class Base_Task(gym.Env):
             pre_dis_axis /= np.linalg.norm(pre_dis_axis)
             target_dis_vec = (target_pose_mat[:3, :3] @ np.array(pre_dis_axis).reshape(3, 1)).reshape(3)
             target_dis_vec /= np.linalg.norm(target_dis_vec)
-        res_pose = (target_point - grasp_bias - pre_dis * target_dis_vec).tolist() + target_grasp_qpose.tolist()
+        res_pose = (target_point - grasp_bias - pre_dis * target_dis_vec).tolist() + qq.tolist()
         return res_pose
 
     def place_actor(
@@ -1340,6 +1352,10 @@ class Base_Task(gym.Env):
                 pre_dis=dis,
                 **args,
             )
+            # delta_matrix = np.eye(4)
+            # delta_matrix[:3, :3] = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
+            # place_pre_pose = place_pre_pose @ delta_matrix
+            # place_pose = place_pose @ delta_matrix
         else:
             place_pre_pose = [0, 0, 0, 0, 0, 0, 0]
             place_pose = [0, 0, 0, 0, 0, 0, 0]

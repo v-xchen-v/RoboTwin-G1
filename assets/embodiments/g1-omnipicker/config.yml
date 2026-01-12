@@ -52,7 +52,7 @@ global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
 
 
 # Initial robot pose in the scene, [[x, y, z, qw, qx, qy, qz]]
-robot_pose: [[-0.2, -0.80, 0.25, 0.707, 0, 0, 0.707]]
+robot_pose: [[-0.1, -0.75, 0.26, 0.707, 0, 0, 0.707]]
 
 
 planner: "mplib_RRT" # mplib_RRT or mplib_screw
@@ -62,7 +62,7 @@ dual_arm: True
 
 rotate_lim: [0, 1]
 
-grasp_perfect_direction: ['front_right', 'front_left']
+grasp_perfect_direction: ['down_right', 'down_left']
 
 # static_camera_list: [] # Empty list - only using robot link mounted cameras
 static_camera_list: 

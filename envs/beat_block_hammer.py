@@ -12,14 +12,14 @@ class beat_block_hammer(Base_Task):
     def load_actors(self):
         self.hammer = create_actor(
             scene=self,
-            pose=sapien.Pose([0, -0.06, 0.783], [0, 0, 0.995, 0.105]),
+            pose=sapien.Pose([0, -0.06 + -0.13, 0.783], [0, 0, 0.995, 0.105]),
             modelname="020_hammer",
             convex=True,
             model_id=0,
         )
         block_pose = rand_pose(
             xlim=[-0.25, 0.25],
-            ylim=[-0.05, 0.15],
+            ylim=[-0.05+-0.13, 0+-0.13],
             zlim=[0.76],
             qpos=[1, 0, 0, 0],
             rotate_rand=True,
@@ -28,7 +28,7 @@ class beat_block_hammer(Base_Task):
         while abs(block_pose.p[0]) < 0.05 or np.sum(pow(block_pose.p[:2], 2)) < 0.001:
             block_pose = rand_pose(
                 xlim=[-0.25, 0.25],
-                ylim=[-0.05, 0.15],
+                ylim=[-0.05+-0.13, 0+-0.13],
                 zlim=[0.76],
                 qpos=[1, 0, 0, 0],
                 rotate_rand=True,
@@ -76,13 +76,16 @@ class beat_block_hammer(Base_Task):
         # Grasp the hammer with the selected arm
         self.move(self.grasp_actor(self.hammer, arm_tag=arm_tag, pre_grasp_dis=0.12, grasp_dis=0.01))
         # Move the hammer upwards
-        self.move(self.move_by_displacement(arm_tag, z=0.07, move_axis="arm"))
+        # self.move(self.move_by_displacement(arm_tag, z=0.01, move_axis="arm"))
 
         # Place the hammer on the block's functional point (position 1)
+        predefined=self.block.get_functional_point(1, "pose")
+        predefined_adapt_p = predefined.p.copy()
+        # predefined_adapt_p[2] -= 0.05  # Adjust height to
         self.move(
             self.place_actor(
                 self.hammer,
-                target_pose=self.block.get_functional_point(1, "pose"),
+                target_pose=sapien.Pose(predefined_adapt_p, predefined.q),
                 arm_tag=arm_tag,
                 functional_point_id=0,
                 pre_dis=0.06,

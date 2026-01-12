@@ -275,7 +275,7 @@ class Robot:
             joint_name = joint[0].get_name()
             if joint_name != "left_gripper_joint":
                 # If is mimic joint, set damping to 0
-                joint[0].set_drive_property(stiffness=1000, damping=0)
+                joint[0].set_drive_property(stiffness=1000, damping=0, force_limit=200)
             else:
                 joint[0].set_drive_property(
                     stiffness=self.left_gripper_stiffness, 
@@ -287,7 +287,7 @@ class Robot:
             joint_name = joint[0].get_name()
             if joint_name != "right_gripper_joint":
                 # If is mimic joint, set damping to 0
-                joint[0].set_drive_property(stiffness=1000, damping=0)
+                joint[0].set_drive_property(stiffness=1000, damping=0, force_limit=200)
             else:
                 joint[0].set_drive_property(
                     stiffness=self.right_gripper_stiffness,
@@ -618,6 +618,8 @@ class Robot:
         use_point_cloud=False,
         use_attach=False,
         last_qpos=None,
+        scene=None,
+        viewer=None,
     ):
         if constraint_pose is not None:
             constraint_pose = self.get_constraint_pose(constraint_pose, arm_tag="right")
@@ -643,6 +645,8 @@ class Robot:
                 trans_target_pose,
                 constraint_pose=constraint_pose,
                 arms_tag="right",
+                scene=scene,
+                viewer=viewer
             )
 
     # The data of gripper has been normalized

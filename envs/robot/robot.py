@@ -112,6 +112,21 @@ class Robot:
                 for shape in link.get_collision_shapes():
                     # Set collision groups to avoid self-collision
                     shape.set_collision_groups([1, 1, 2, 0])  # Only collide with group 2 (ground)
+            # Increase gripper friction
+            # Create a high-friction material
+            sticky_mat = scene.create_physical_material(
+                static_friction=2.0, 
+                dynamic_friction=2.0, 
+                restitution=0.0
+            )
+
+            # Apply to the Robot Gripper Fingers
+            # (Iterate through robot links to find the fingers)
+            for link in self._entity.get_links():
+                if "wide" in link.name or "narrow" in link.name:
+                    for shape in link.get_collision_shapes():
+                        shape.set_physical_material(sticky_mat)        
+            
             self.left_entity = self._entity
             self.right_entity = self._entity
             pass
@@ -266,7 +281,7 @@ class Robot:
                     stiffness=self.left_gripper_stiffness, 
                     damping=self.left_gripper_damping, 
                     force_limit=200)
-            joint[0].set_armature([0.05])
+            joint[0].set_armature([0.02])
             
         for joint in self.right_gripper:
             joint_name = joint[0].get_name()
@@ -279,7 +294,7 @@ class Robot:
                     damping=self.right_gripper_damping,
                     force_limit=200
                 )
-            joint[0].set_armature([0.05])
+            joint[0].set_armature([0.02])
 
     def move_to_homestate(self, viewer=None):
         for i, joint in enumerate(self.left_arm_joints):

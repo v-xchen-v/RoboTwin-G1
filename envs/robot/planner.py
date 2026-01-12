@@ -530,7 +530,7 @@ class MplibPlanner:
                 
             # sim loop here for a while to visualize the marker
             # [DEBUG]
-            for _ in range(500):
+            for _ in range(50):
                 scene.step()
                 scene.update_render()
                 viewer.render()

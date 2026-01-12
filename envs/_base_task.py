@@ -224,7 +224,8 @@ class Base_Task(gym.Env):
         scene_config = sapien.SceneConfig()
         self.scene = self.engine.create_scene(scene_config)
         # set simulation timestep
-        self.scene.set_timestep(kwargs.get("timestep", 1 / 250))
+        # self.scene.set_timestep(kwargs.get("timestep", 1 / 500))
+        self.scene.set_timestep(kwargs.get("timestep", 1 / 1000))
         # add ground to scene
         self.scene.add_ground(kwargs.get("ground_height", 0))
         # set default physical material

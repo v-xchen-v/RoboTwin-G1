@@ -44,6 +44,20 @@ class beat_block_hammer(Base_Task):
             is_static=True,
         )
         self.hammer.set_mass(0.001)
+        
+        # set friction of hammer
+        # Create a high-friction material
+        sticky_mat = self.scene.create_physical_material(
+            static_friction=2.0, 
+            dynamic_friction=2.0, 
+            restitution=0.0
+        )
+
+        # Apply to the Box
+        for shape in self.hammer.actor.find_component_by_type(
+            sapien.physx.PhysxRigidBaseComponent
+        ).get_collision_shapes():
+            shape.set_physical_material(sticky_mat)
 
         self.add_prohibit_area(self.hammer, padding=0.10)
         self.prohibited_area.append([

@@ -36,7 +36,7 @@ gripper_name:
            ]
 
 # How to adjust?
-gripper_bias: 0.17
+gripper_bias: 0.145
 # gripper_scale: [-0.01, 0.045]
 gripper_scale: [1, 0.1]
 homestate: [[0,0,0,0,0,0,0], [0,0,0,0,0,0,0]]
@@ -52,7 +52,7 @@ global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
 
 
 # Initial robot pose in the scene, [[x, y, z, qw, qx, qy, qz]]
-robot_pose: [[-0.2, -0.75, 0.25, 0.707, 0, 0, 0.707]]
+robot_pose: [[-0.2, -0.80, 0.25, 0.707, 0, 0, 0.707]]
 
 
 planner: "mplib_RRT" # mplib_RRT or mplib_screw

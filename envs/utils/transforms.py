@@ -494,6 +494,7 @@ def get_place_pose(
         z_align_matrix = get_align_matrix(actor_pose_mat[:3, :3] @ actor2world[:3, 2], target_z)
     else:
         z_align_matrix = get_align_matrix(actor_pose_mat[:3, 2], target_z)
+    delta_matrix = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
     actor_pose_mat[:3, :3] = z_align_matrix @ actor_pose_mat[:3, :3]
 
     if constrain == "align":

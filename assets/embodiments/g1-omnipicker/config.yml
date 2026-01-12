@@ -36,31 +36,33 @@ gripper_name:
            ]
 
 # How to adjust?
-gripper_bias: 0.12
+gripper_bias: 0.145
 # gripper_scale: [-0.01, 0.045]
-gripper_scale: [0.1, 0.78]
+gripper_scale: [1, 0.1]
 homestate: [[0,0,0,0,0,0,0], [0,0,0,0,0,0,0]]
 
 # how to adjust delta matrix?
-delta_matrix: [[1,0,0],[0,1,0],[0,0,1]]
+# delta_matrix: [[1,0,0],[0,1,0],[0,0,1]]
 # delta_matrix: [[0,-1,0],[1,0,0],[0,0,1]] # 90° rotation around Z-axis:
-# delta_matrix: [[0,0,1],[0,-1,0],[1,0,0]]
+# # delta_matrix: [[0,0,1],[0,1,0],[-1,0,0]] # 90° rotation around Y-axis:
+# delta_matrix: [[0, 0, 1], [1, 0, 0], [0, 1, 0]] # first 90° rotation around Z-axis, then 90° rotation around Y-axis:
+delta_matrix: [[0, -1, 0], [0, 0, -1], [1, 0, 0]] # first 90° rotation around x-axis, then 90° rotation around X-axis:
 # global_trans_matrix: [[1,0,0],[0,-1,0],[0,0,-1]]
 global_trans_matrix: [[1,0,0],[0, 1,0],[0,0,1]]
 
 
 # Initial robot pose in the scene, [[x, y, z, qw, qx, qy, qz]]
-robot_pose: [[0, -0.75, 0.0, 0.707, 0, 0, 0.707]]
+robot_pose: [[0.0, -0.78, 0.26, 0.707, 0, 0, 0.707]]
 
 
-planner: "mplib_screw"
+planner: "mplib_RRT" # mplib_RRT or mplib_screw
 #planner: "curobo"
 
 dual_arm: True
 
 rotate_lim: [0, 1]
 
-grasp_perfect_direction: ['front_right', 'front_left']
+grasp_perfect_direction: ['down_right', 'down_left']
 
 # static_camera_list: [] # Empty list - only using robot link mounted cameras
 static_camera_list: 

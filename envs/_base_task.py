@@ -114,6 +114,10 @@ class Base_Task(gym.Env):
         self.right_joint_path = kwags.get("right_joint_path", [])
         self.left_cnt = 0
         self.right_cnt = 0
+        
+        # pass viewer to kwags for robot debugging visualization
+        if self.render_freq:
+            kwags["viewer"] = self.viewer
 
         self.instruction = None  # for Eval
 
@@ -220,7 +224,8 @@ class Base_Task(gym.Env):
         scene_config = sapien.SceneConfig()
         self.scene = self.engine.create_scene(scene_config)
         # set simulation timestep
-        self.scene.set_timestep(kwargs.get("timestep", 1 / 250))
+        # self.scene.set_timestep(kwargs.get("timestep", 1 / 500))
+        self.scene.set_timestep(kwargs.get("timestep", 1 / 1000))
         # add ground to scene
         self.scene.add_ground(kwargs.get("ground_height", 0))
         # set default physical material
@@ -779,7 +784,8 @@ class Base_Task(gym.Env):
             pose = pose.p.tolist() + pose.q.tolist()
 
         if self.need_plan:
-            right_result = self.robot.right_plan_path(pose, constraint_pose=constraint_pose)
+            right_result = self.robot.right_plan_path(pose, constraint_pose=constraint_pose,
+                                                      scene=self.scene, viewer=self.viewer)
             self.right_joint_path.append(deepcopy(right_result))
         else:
             right_result = deepcopy(self.right_joint_path[self.right_cnt])
@@ -1282,13 +1288,24 @@ class Base_Task(gym.Env):
         target_point = (start2target @ (actor_matrix[:3, 3] - place_start_pose.p).reshape(3, 1)).reshape(3) + np.array(
             place_pose[:3])
 
+        # delta_matrix = np.eye(4)
+        # delta_matrix = np.array([[0, 0, 1], [0, 1, 0], [-1, 0, 0]]) 
+        # delta_matrix = np.array([[0, 0, 1], [0, 0, -1], [0, 1, 0]])
+        delta_matrix = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]) # z: 90
+
         ee_pose_matrix = t3d.quaternions.quat2mat(end_effector_pose[-4:])
-        target_grasp_matrix = start2target @ ee_pose_matrix
+        target_grasp_matrix =  start2target @ ee_pose_matrix
 
         res_matrix = np.eye(4)
+        # delta_matrix = np.array([[0, -1, 0], [0, 0, -1], [1, 0, 0]])
         res_matrix[:3, 3] = actor_matrix[:3, 3] - end_effector_pose[:3]
         res_matrix[:3, 3] = np.linalg.inv(ee_pose_matrix) @ res_matrix[:3, 3]
         target_grasp_qpose = t3d.quaternions.mat2quat(target_grasp_matrix)
+        
+        
+        q = t3d.quaternions.quat2mat(target_grasp_qpose)
+        q = q @ delta_matrix
+        qq = t3d.quaternions.mat2quat(q)
 
         grasp_bias = target_grasp_matrix @ res_matrix[:3, 3]
         if pre_dis_axis == "grasp":
@@ -1302,7 +1319,7 @@ class Base_Task(gym.Env):
             pre_dis_axis /= np.linalg.norm(pre_dis_axis)
             target_dis_vec = (target_pose_mat[:3, :3] @ np.array(pre_dis_axis).reshape(3, 1)).reshape(3)
             target_dis_vec /= np.linalg.norm(target_dis_vec)
-        res_pose = (target_point - grasp_bias - pre_dis * target_dis_vec).tolist() + target_grasp_qpose.tolist()
+        res_pose = (target_point - grasp_bias - pre_dis * target_dis_vec).tolist() + qq.tolist()
         return res_pose
 
     def place_actor(

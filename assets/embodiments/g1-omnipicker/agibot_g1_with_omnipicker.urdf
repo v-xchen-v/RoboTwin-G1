@@ -1152,5 +1152,24 @@
     <!-- 如果左右朝向需要对称，可以这里加一个 yaw=π 之类 -->
     <origin xyz="0 0 0" rpy="0 0 -1.57079632679"/>
   </joint>
+
+
+  <!-- LEFT WRIST CAM -->
+  <joint name="left_wrist_camera_joint" type="fixed">
+    <parent link="left_camera_stand"/>
+    <child link="left_camera"/>
+    <origin xyz="0 -0.07754 0.028618" rpy="0 -1.117 1.5708"/>
+  </joint>
+
+  <link name="left_camera"/>
+
+  <!-- RIGHT WRIST CAM -->
+  <joint name="right_wrist_camera_joint" type="fixed">
+    <parent link="right_camera_stand"/>
+    <child link="right_camera"/>
+    <origin xyz="0 -0.07754 0.028618" rpy="0 -1.117 1.5708"/>
+  </joint>
+
+  <link name="right_camera"/>
 </robot>
 

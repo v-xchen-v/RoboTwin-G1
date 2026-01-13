@@ -609,6 +609,8 @@ class Robot:
                 trans_target_pose,
                 constraint_pose=constraint_pose,
                 arms_tag="left",
+                scene = self.scene,
+                viewer = self.viewer
             )
 
     def right_plan_path(

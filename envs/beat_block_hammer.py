@@ -84,8 +84,17 @@ class beat_block_hammer(Base_Task):
         # Grasp the hammer with the selected arm
         self.move(self.grasp_actor(self.hammer, arm_tag=arm_tag, pre_grasp_dis=0.12, grasp_dis=0.01))
         
-        # Move the hammer upwards
+        # # Move the hammer upwards
         # self.move(self.move_by_displacement(arm_tag, z=0.05, move_axis="world"))
+        
+        # # Move the hammer upwards: multiple candidate to give move chances to reachable pose
+        for z in np.linspace(0.03, 0.05, num=10):
+            ret = self.move(self.move_by_displacement(arm_tag=arm_tag, z=z, move_axis="world"))
+            if ret:
+                break
+            else:
+                self.plan_success = True # reset plan success flag, to make next move() trigger planning again
+
 
         # Place the hammer on the block's functional point (position 1)
         predefined=self.block.get_functional_point(1, "pose")
@@ -98,7 +107,7 @@ class beat_block_hammer(Base_Task):
                 arm_tag=arm_tag,
                 functional_point_id=0,
                 pre_dis=0.02,
-                dis=-0.05,
+                dis=0,
                 is_open=False,
             ))
 

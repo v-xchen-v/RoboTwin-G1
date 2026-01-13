@@ -911,6 +911,7 @@ class Base_Task(gym.Env):
                 else:
                     return actions[1][1]
 
+        # if plan failed, return directly
         if self.plan_success is False:
             return False
 
@@ -1389,6 +1390,11 @@ class Base_Task(gym.Env):
         origin_pose += displacement
         if quat is not None:
             origin_pose[3:] = quat
+            
+        origin_ori_mat = t3d.quaternions.quat2mat(origin_pose[3:])
+        delta_matrix = np.array([[0, 1, 0], [-1, 0, 0], [0, 0, 1]]) # z: 90
+        origin_ori_mat = origin_ori_mat @ delta_matrix
+        origin_pose[3:] = t3d.quaternions.mat2quat(origin_ori_mat)
         return arm_tag, [Action(arm_tag, "move", target_pose=origin_pose)]
 
     def move_to_pose(
